@@ -12,6 +12,8 @@ estiver entre os horarios setados pelos dipswitchs(c1)
 {A1 ate A5 "hr final",6 ate 2 "hr inicial", e nao pode passar de 24horas}, 
 e isso so acontecera se o sistema receber HIGH na porta 11
 */ 
+#include "Ultrasonic.h"
+Ultrasonic ultrasonic(5, 2);
 
 #define Sensor  2
 #define Alarme  4
@@ -39,6 +41,7 @@ String hora_lida = "--:--";
 long int t1;
 long int hora_inicial;
 long int min_ant;
+int MOTION;
 
 void setup() {
   Serial.begin(9600);
@@ -84,19 +87,28 @@ void setup() {
   Serial.print("Minutos em ms: "); Serial.println(minutos);
   Serial.print("Hora inicial em ms: "); Serial.println(hora_inicial);
   */
+  MOTION = 0;
+  Serial.println(MOTION);
 }
 
 
 void loop() {
   int PW = digitalRead(LED_verde); // Le a entrada do led verde
-  int MOTION = digitalRead(Sensor); // Le a entrada do sensor
+  if (ultrasonic.read()<10) {
+    MOTION = HIGH;  
+    Serial.println(MOTION);
+  } else {
+    int MOTION = LOW;
+    Serial.println(MOTION);
+  }
+
+  //int MOTION = digitalRead(Sensor); // Le a entrada do sensor
 
   int HORAIN = readDipSwitchesStart(); // Detectar horario inicial
   int HORAFN = readDipSwitchesEnd(); // Detectar horario final
   String relogio = updateCurrentTime(hora_inicial, t1);
   int HORA = relogio.substring(0, 2).toInt();
   int MIN = relogio.substring(3).toInt();
-
   
   
   
@@ -110,6 +122,7 @@ void loop() {
       Serial.print("Hora Final: ");
       Serial.println(HORAFN);
       Serial.println("");
+      Serial.println(ultrasonic.read());
       min_ant = MIN;
     };
     if (HORAIN > 24 || HORAFN > 24){
@@ -122,6 +135,7 @@ void loop() {
         TocarAlarme(1);// Alarme toca enquanto estiver movimento
       } 
       else {
+        TocarAlarme(0);
         noTone(Alarme);
       }
     } else {
@@ -144,7 +158,7 @@ void loop() {
 // Toca o alarme se tiver algum movimento 
 void TocarAlarme(int entrada) {
   while (entrada > 0) {
-    tone(Alarme, 220);
+    tone(Alarme, 120);
     delay(100);
     entrada--;// Para o toque nao ficar infinito(tirar depois)
   }
